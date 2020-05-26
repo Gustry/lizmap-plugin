@@ -1,0 +1,24 @@
+stages:
+- package 📦
+- deploy 🚀
+
+package:
+  stage: package 📦
+#  only:
+#    - schedules
+  script:
+    - docker run --rm -w /plugin -v ${CI_PROJECT_DIR}:/plugin -u $(id -u):$(id -g) etrimaille/qgis-plugin-ci package ${CI_COMMIT_REF_NAME} --allow-uncommitted-changes --disallow-submodule-update
+  tags:
+    - factory
+  artifacts:
+    paths:
+    - lizmap.${CI_COMMIT_REF_NAME}.zip
+
+deploy:
+  stage: deploy 🚀
+#  only:
+#    - schedules
+  script:
+    - upload_to_packages_server lizmap.${CI_COMMIT_REF_NAME}.zip pub/lizmap-qgis-plugin/${CI_COMMIT_REF_NAME}
+  tags:
+    - fabric
