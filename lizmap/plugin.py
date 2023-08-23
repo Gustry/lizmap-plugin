@@ -32,6 +32,10 @@ from qgis.core import (
     QgsVectorLayer,
     QgsWkbTypes,
 )
+
+if Qgis.QGIS_VERSION_INT >= 32200:
+    from qgis.core import QgsSettingsEntryBool
+
 from qgis.PyQt import sip
 from qgis.PyQt.QtCore import (
     QCoreApplication,
@@ -238,6 +242,17 @@ class Lizmap:
         else:
             self.webdav = None
         self.check_webdav()
+
+        if Qgis.QGIS_VERSION_INT >= 32200:
+            # root = QgsSettingsTree.createPluginTreeNode("lizmap")
+            self.auto_save = QgsSettingsEntryBool(
+                "auto_save_project",
+                "lizmap",
+                False,
+                tr("If the QGS project file must be saved as well when the Lizmap configuration file is generated."),
+            )
+            if not self.auto_save.exists():
+                self.auto_save.copyValueFromKey('lizmap/auto_save_project')
 
         self.layers_table = dict()
 
@@ -3472,7 +3487,10 @@ class Lizmap:
         auto_save = self.dlg.checkbox_save_project.isChecked()
         if save_project is None:
             # Only save when we are in GUI
-            QgsSettings().setValue('lizmap/auto_save_project', auto_save)
+            if Qgis.QGIS_VERSION_INT >= 32200:
+                self.auto_save.setValue(auto_save)
+            else:
+                QgsSettings().setValue('lizmap/auto_save_project', auto_save)
 
         if self.project.isDirty():
             if save_project or auto_save:
@@ -3763,7 +3781,10 @@ class Lizmap:
 
         self.dlg.block_signals_address(False)
 
-        auto_save = QgsSettings().value('lizmap/auto_save_project', False, bool)
+        if Qgis.QGIS_VERSION_INT >= 32200:
+            auto_save = self.auto_save.value()
+        else:
+            auto_save = QgsSettings().value('lizmap/auto_save_project', False, bool)
         self.dlg.checkbox_save_project.setChecked(auto_save)
 
         self.dlg.exec_()
