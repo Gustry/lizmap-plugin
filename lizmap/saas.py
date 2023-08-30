@@ -12,6 +12,7 @@ from qgis.core import (
     QgsProviderRegistry,
     QgsRasterLayer,
 )
+from qgis.PyQt.QtNetwork import QHostAddress
 
 from lizmap.project_checker_tools import _is_vector_pg
 from lizmap.qgis_plugin_tools.tools.i18n import tr
@@ -58,6 +59,15 @@ def valid_saas_lizmap_dot_com(project: QgsProject) -> Tuple[bool, Dict[str, str]
                     ).format(layer.name())
                     connection_error = True
 
+            ip_address = QHostAddress(datasource.host())
+            if not ip_address.isNull():
+                # If it's an IP address:
+                if not is_public_ip(ip_address):
+                    layer_error[layer.name()] = tr(
+                        'The layer "{}" is using a private IP address which will be unreachable from the Lizmap server.'
+                    ).format(layer.name())
+                    connection_error = True
+
         components = QgsProviderRegistry.instance().decodeUri(layer.dataProvider().name(), layer.source())
         if 'path' not in components.keys():
             # The layer is not file base.
@@ -92,3 +102,18 @@ def valid_saas_lizmap_dot_com(project: QgsProject) -> Tuple[bool, Dict[str, str]
         )
 
     return len(layer_error) != 0, layer_error, more
+
+
+def is_public_ip(ip_address: QHostAddress) -> bool:
+    """ Check if the given address is public."""
+    if ip_address.isNull():
+        # Invalid IP address, maybe it's a hostname
+        return True
+
+    if not ip_address.isGlobal():
+        # Loopback or multicast
+        return False
+
+    # TODO, check class A, B, C
+
+    return True
