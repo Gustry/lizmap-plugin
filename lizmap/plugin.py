@@ -1362,24 +1362,10 @@ class Lizmap:
 
     def _open_wizard_group(self, line_edit: QLineEdit, helper: str) -> Optional[str]:
         """ Open the group wizard and set the output in the line edit. """
-        # Duplicated in base_edition_dialog.py, open_wizard_dialog()
-        json_metadata = self.dlg.server_combo.currentData(ServerComboData.JsonMetadata.value)
-        acl = json_metadata.get('acl')
-        if not acl:
-            QMessageBox.critical(
-                self.dlg,
-                tr('Upgrade your Lizmap instance'),
-                tr(
-                    "Your current Lizmap instance, running version {}, is not providing the needed information. "
-                    "You should upgrade your Lizmap instance to at least 3.6.1 to use this wizard."
-                ).format(json_metadata["info"]["version"]),
-                QMessageBox.Ok
-            )
-            return None
-        # End of duplicated
+        server_acl = self.dlg.current_server_acl()
 
         current_acl = line_edit.text()
-        wizard_dialog = WizardGroupDialog(helper, current_acl, acl['groups'])
+        wizard_dialog = WizardGroupDialog(helper, current_acl, server_acl)
         if not wizard_dialog.exec_():
             return None
 

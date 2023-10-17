@@ -9,16 +9,11 @@ from typing import Union
 from qgis.core import QgsProject, QgsVectorLayer
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtGui import QBrush, QColor, QDesktopServices, QIcon
-from qgis.PyQt.QtWidgets import (
-    QDialog,
-    QDialogButtonBox,
-    QMessageBox,
-    QPlainTextEdit,
-)
+from qgis.PyQt.QtWidgets import QDialog, QDialogButtonBox, QPlainTextEdit
 
 from lizmap import DEFAULT_LWC_VERSION
 from lizmap.definitions.base import InputType
-from lizmap.definitions.definitions import LwcVersions, ServerComboData
+from lizmap.definitions.definitions import LwcVersions
 from lizmap.definitions.online_help import online_lwc_help
 from lizmap.dialogs.wizard_group import WizardGroupDialog
 from lizmap.qgis_plugin_tools.tools.i18n import tr
@@ -507,24 +502,8 @@ class BaseEditionDialog(QDialog):
 
     def open_wizard_dialog(self, helper: str):
         """ Internal function to open the wizard ACL. """
-        # Duplicated in plugin.py, _open_wizard_group()
-        json_metadata = self.parent.current_server_info(ServerComboData.JsonMetadata.value)
-        acl = json_metadata.get('acl')
-        if not acl:
-            # noinspection PyArgumentList
-            QMessageBox.critical(
-                self,
-                tr('Upgrade your Lizmap instance'),
-                tr(
-                    "Your current Lizmap instance, running version {}, is not providing the needed information. "
-                    "You should upgrade your Lizmap instance to at least 3.6.1 to use this wizard."
-                ).format(json_metadata["info"]["version"]),
-                QMessageBox.Ok
-            )
-            return None
-        # End of duplicated
-
-        wizard_dialog = WizardGroupDialog(helper, self.allowed_groups.text(), acl['groups'])
+        server_acl = self.parent.current_server_acl()
+        wizard_dialog = WizardGroupDialog(helper, self.allowed_groups.text(), server_acl)
         if not wizard_dialog.exec_():
             return
 

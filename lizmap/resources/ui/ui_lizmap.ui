@@ -3756,6 +3756,13 @@ This is different to the map maximum extent (defined in QGIS project properties,
                    </widget>
                   </item>
                   <item>
+                   <widget class="QPushButton" name="preview_attribute_filtering">
+                    <property name="text">
+                     <string>Preview</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
                    <widget class="QTableWidget" name="table_login_filter"/>
                   </item>
                   <item>

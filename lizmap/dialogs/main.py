@@ -35,6 +35,7 @@ from lizmap.definitions.definitions import (
     ServerComboData,
 )
 from lizmap.definitions.online_help import online_lwc_help
+from lizmap.dialogs.filter_preview import FilterPreviewDialog
 from lizmap.qgis_plugin_tools.tools.i18n import tr
 from lizmap.qgis_plugin_tools.tools.resources import load_ui, resources_path
 from lizmap.qt_style_sheets import COMPLETE_STYLE_SHEET
@@ -71,6 +72,10 @@ class LizmapDialog(QDialog, FORM_CLASS):
 
         self.feature_picker_layout.addWidget(self.dataviz_feature_picker)
         self.feature_picker_layout.addItem(QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding))
+
+        icon = QgsApplication.getThemeIcon("mActionToggleSelectedLayers.svg")
+        self.preview_attribute_filtering.setIcon(icon)
+        self.preview_attribute_filtering.clicked.connect(self.open_filter_preview)
 
         # IGN and google
         self.inIgnKey.textChanged.connect(self.check_ign_french_free_key)
@@ -230,6 +235,29 @@ class LizmapDialog(QDialog, FORM_CLASS):
                 current_text = self.combo_legend_option.currentText()
                 if current_text.endswith(text):
                     self.combo_legend_option.setCurrentText(current_text.replace(text, ''))
+
+    def open_filter_preview(self):
+        """ Open the filter preview dialog. """
+        dialog = FilterPreviewDialog(self.current_server_acl())
+        dialog.exec_()
+
+    def current_server_acl(self) -> Optional[dict]:
+        """ Current list of ACL if available. """
+        json_metadata = self.server_combo.currentData(ServerComboData.JsonMetadata.value)
+        acl = json_metadata.get('acl')
+        if not acl:
+            QMessageBox.critical(
+                self,
+                tr('Upgrade your Lizmap instance'),
+                tr(
+                    "Your current Lizmap instance, running version {}, is not providing the needed information. "
+                    "You should upgrade your Lizmap instance to at least 3.6.1 to use this wizard."
+                ).format(json_metadata["info"]["version"]),
+                QMessageBox.Ok
+            )
+            return None
+
+        return acl['groups']
 
     def check_qgis_version(self, message_bar=False, widget=False):
         """ Compare QGIS desktop and server versions and display results if necessary. """
