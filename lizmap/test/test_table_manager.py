@@ -1185,8 +1185,8 @@ class TestTableManager(unittest.TestCase):
         }
         self.assertDictEqual(data, expected)
 
-    def test_fake_layer_id_table_manager(self):
-        """Test we can skip a wrong layer id."""
+    def test_unavailable_layer_table_manager(self):
+        """ Test we can keep layer which is unavailable at the moment. """
         table = QTableWidget()
         definitions = AtlasDefinitions()
 
@@ -1213,9 +1213,31 @@ class TestTableManager(unittest.TestCase):
                 layer_1
             ]
         }
-        self.assertEqual(table_manager.table.rowCount(), 0)
+        self.assertEqual(table_manager.table.rowCount(), 1)
         table_manager.from_json(json)
-        self.assertEqual(table_manager.table.rowCount(), 0)
+        self.assertEqual(table_manager.table.rowCount(), 1)
+        data = table_manager.to_json()
+
+        expected = {
+            'lines_2': {
+                'fieldName': 'name',
+                'displayGeom': 'False',
+                'minLength': 0,
+                'filterOnLocate': 'True',
+                'layerId': "ID_WHICH_DOES_NOT_EXIST",
+                'order': 0
+            },
+            'lines': {
+                'fieldName': 'name',
+                'filterFieldName': 'id',
+                'displayGeom': 'True',
+                'minLength': 0,
+                'filterOnLocate': 'False',
+                'layerId': "ID_WHICH_DOES_NOT_EXIST",
+                'order': 1
+            },
+        }
+        self.assertDictEqual(data, expected)
 
     def test_table_manager(self):
         """Test about the table manager.

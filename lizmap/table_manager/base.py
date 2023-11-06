@@ -223,6 +223,12 @@ class TableManager:
 
         row = selection[0].row()
 
+        # Invalid layer
+        cell = self.table.item(row, 0)
+        value = cell.data(Qt.UserRole + 1)
+        if value is not None and not value:
+            return
+
         data = dict()
         for i, key in enumerate(self.keys):
             cell = self.table.item(row, i)
@@ -258,13 +264,20 @@ class TableManager:
                     value = value(self._layer)
 
             if input_type == InputType.Layer:
-                layer = self.project.mapLayer(value)
-                self._layer = layer
-                cell.setText(layer.name())
-                cell.setData(Qt.UserRole, layer.id())
-                cell.setData(Qt.ToolTipRole, '{} ({})'.format(layer.name(), layer.crs().authid()))
-                # noinspection PyArgumentList
-                cell.setIcon(QgsMapLayerModel.iconForLayer(layer))
+                self._layer = self.project.mapLayer(value)
+                cell.setData(Qt.UserRole, value)
+                if self._layer:
+                    cell.setData(Qt.UserRole + 1, True)
+                    cell.setText(self._layer.name())
+                    cell.setData(Qt.ToolTipRole, '{} ({})'.format(self._layer.name(), self._layer.crs().authid()))
+                    # noinspection PyArgumentList
+                    cell.setIcon(QgsMapLayerModel.iconForLayer(self._layer))
+                else:
+                    # The layer is temporary unavailable
+                    cell.setData(Qt.UserRole + 1, False)
+                    cell.setText(value)
+                    cell.setData(Qt.ToolTipRole, tr('Layer {} is unavailable').format(value))
+                    cell.setIcon(QIcon(":/images/themes/default/mIconWarning.svg"))
 
             elif input_type == InputType.Layers:
                 names = []
@@ -958,9 +971,10 @@ class TableManager:
                         if not vector_layer or not vector_layer.isValid():
                             LOGGER.warning(
                                 'In CFG file, section "{}", the layer with ID "{}" is invalid or does not exist.'
-                                ' Skipping that layer.'.format(
+                                ' Trying to keep configuration.'.format(
                                     self.definitions.key(), value))
-                            valid_layer = False
+                            # Let's try to keep the configuration
+                            # valid_layer = False
                         layer_data[key] = value
                     elif definition['type'] == InputType.Layers:
                         layer_data[key] = value
